@@ -1,0 +1,251 @@
+C Project:
+https://moodle.reed.edu/mod/page/view.php?id=341298
+
+This project is a multi-week pair/group project on hash tables to wrap-up our C unit. You will specifically design a hash table that can randomly generate text according to given input texts. This is called a Markov text generator, and while it’s not nearly as smart as an LLM, it can be thought of as the more simple ancestor to the LLM. This project involves detailed code design, adherence to specifications, memory handling, and creativity!
+
+Complete this project in pairs.
+
+Due: Wednesday, October 15 11:59 PM
+Submission
+
+Projects will be submitted on Gradescope (the links are found on Moodle). Please submit the following file(s):
+
+hash_table.h
+
+hash_table.c
+
+text_gen.h
+
+text_gen.c
+
+writeup.txt or writeup.pdf
+
+When you submit your work on Gradescope, it will run an autograder. If your submission fails to compile with the autograder, you will get an automatic 0 for the assignment. If it fails some tests, that will also negatively impact your grade (except for labs, which are graded for completion). For any given project, we may run more tests than you see when you submit your work!
+Part 1: Designing a Hash Table
+
+The goal of our text generator is to generate text that doesn’t sound like total gobbledygook. In order to achieve this, the generator must learn from a dataset. That is, we must provide it sample text to read and store in a way that will help it generate something that looks like real text. Here, we will store bigrams, or pairs of words that follow sequentially in a text. We’ll discuss how we use these more in Part 2.
+
+
+
+We start this project by designing the data structure used for storing the input text. For each word that is present in the text, we need to store some kind of data associated with that word, and we need to store these (word, data) pairs in a structure.
+
+In Python, the most natural structure to use is the dictionary. Each dictionary entry contains a key (the word) and a value (the data). You can access the value associated with a key by querying the dictionary with the key. But how is this actually implemented? If your experience with dictionaries is limited to simply using the Python dictionary type, it may seem like just a magic box to you. In reality, there’s a lot of bookkeeping Python does for you, so you don’t have to worry about any of the gross underlying memory management issues.
+
+In this project, however, you get to do all the gross underlying memory management yourselves! Hooray!
+
+The particular hash table we’re making is going to be a little bit more involved than your average hash table. The following problems will walk you through its creation, but at a high level: Our hash table is a dynamic resizing array. In each array position, we have a bucket, which is a linked list of all keys that hash to that index. For each key (that is, each element in that linked list), we need to keep track of some data including: the key itself, the key frequency in the text, and a linked list of words that follow the key, along with their frequencies.
+
+That’s a lot to throw at you at once! Just take it step by step and everything will be okay :) We’ve also created a handy dandy graphic below depicting this structure for your reference (it’s complicated enough that you probably have to zoom in to read it…). Have fun!
+
+Word Data Struct (10 pts)
+
+hash_table.h and hash_table.c
+
+A hash table uses keys to query data associated with keys. In our case, the key is going to be a word (please use the <string.h> library for this assignment). The data is slightly more complicated.
+
+In this project, you will need to be able to output of the following data associated with each word:
+
+
+    The string representing the word itself
+
+
+    The number of times it appears in the text
+
+
+    The set of words that occur after it along with how many times they occur after it
+
+Note: this data structure does include a list! You can implement this however you like, but note that it may require the definition of an additional structure. Please don’t include this in the header file.
+
+Make sure the size of the data structure isn’t too large (e.g., if the phrase “cat wizard” never appears in the text but “cat” and “wizard” both appear, then the probability “wizard” follows “cat” is zero because it is not in the list of words that follow cat, so we don’t need to track it).
+
+Make sure we can define a data struct using “Word_Data” by including the header file. If you need examples about what this looks like, feel free to search the internet or check the course notes/slides!
+Hash Bucket Struct (10 pts)
+
+hash_table.h and hash_table.c
+
+In class, we talked about how hash tables use the key to index a large table, and that the (key, value) pair is stored in the table itself. We also discussed what happens when two keys map to the same index in the table - boom! We get a collision.
+
+There are a number of ways to resolve hash table collisions. In this assignment, we will use bucket hashing. In bucket hashing, we allow multiple key-value pairs to be assigned to the same index in the table, and we store them in a linked list. Then, when we query the hash table at one of the keys, we simply search through the keys at the associated index until we find the one that matches.
+
+Here, we ask you to define a struct for a bucket (e.g., what is stored at an index in a hash table). As this is a linked list, you may need to define other structs to use for the nodes. Do not include them in the header file.
+
+In your header file, only include the definition of the struct itself, not its data members. Make sure we can define a data struct using “Bucket” by including the header file.
+
+Hash Table Struct (5 pts)
+
+hash_table.h and hash_table.c
+
+Finally, we can define our hash table. We expect your hash table to be stored as a dynamically resizing array. This means that it should be a pointer to an array, and that array may change in size over time. We did something like this with our string implementation a couple weeks ago.
+
+Other than the array, we will need a few other data members. Feel free to define any other data members that may be useful!
+
+
+    The current capacity of our resizing array.
+
+
+    The hash table allowed load factor. This helps us know when we need to resize the table. We will talk about this more later.
+
+In your header file, only include the definition of the struct itself, not its data members. Make sure we can define a data struct using “Hash_Table” by including the header file.
+Empty Hash Table (5 pts)
+
+hash_table.h and hash_table.c
+
+Now we can write code that will generate an empty hash table. Define a function hash_table which takes an integer and a float for arguments and creates an instance of your hash table on the heap, and returns a pointer to that structure.
+
+The integer should define the starting capacity of the array representing your hash table - you should actually set the capacity to a small prime number at least as large as the integer input.  For reasons you might learn in an abstract algebra class, this will generally reduce the number of collisions that occur.
+
+Hint: You might want a helper function which generates prime numbers…
+
+The float defines the allowable load factor, which is used to determine when we resize the hash table. More on that later.
+
+This should appear in your header file.
+Hash Functions (15 pts)
+
+hash_table.c
+
+Write a function hash which takes in an integer (representing a hash table size) and a string and outputs the correct index for the string in a hash table of that size. We will use the Fowler-Noll Vo hash function for this project:
+
+hash := OFFSET, then for each character update hash with hash = (hash XOR binary(c)) * PRIME
+
+
+    OFFSET = 14695981039346656037 (type uint64_t)
+
+
+    PRIME = 1099511628211 (type uint64_t)
+
+
+    XOR is the bitwise operator
+
+
+    binary(c) is the binary representation of the character c, which can be found by casting c to an “unsigned char” and then casting that to a “uint64_t”.
+
+Do not include this function in your header file. Users should not have to interface with the hash function at all, so it should be left to the underlying implementation.
+Add (20 pts)
+
+hash_table.h and hash_table.c
+
+Now we can actually start building our hash table! This function “add” takes in two strings and a pointer to a hash table. You can assume this function is only called when the strings appear consecutively in the text, and we need to add it to the data tracked by the hash table. There’s a lot going on here - but I’ll leave it to you to figure out how this function works! You may need to call your hash function…
+
+This function should appear in your header file.
+Resize (20 pts)
+
+hash_table.c
+
+Imagine our hash table starts with capacity 16 and we decide to read a text with 1024 unique words. Clearly, this will flood our hash table with many collisions, our buckets will get long, and each query to add to the hash table could take a long time.
+
+We need a way to increase the size of the array. Like in our array implementation of a string, we will use dynamic resizing. Specifically, we resize when the average bucket size exceeds our load factor. For instance, if our load factor is 2.5 and our hash table has capacity 16, then we will have to resize when the 40th key is added.
+
+When we resize, we want to make sure that the array at least doubles in size, and the capacity is still prime. So choose a small prime that is greater than twice the length of the current array.
+
+When you go to resize, you’re going to have to create a new array, rehash everything from the old array into the new one, and properly destroy the old array. Be careful and make sure to use Valgrind or Leaks!
+
+Update your add function to check the load factor and determine if it’s time to resize!
+Testing (0 pts)
+
+At this point, we trust that this structure is complex enough that you will be forced to test your own code. And if you can bugglessly make it without tests, power to you, but we strongly advise rigorous testing.
+Part 2: Text Generator
+
+Now for the fun part - text generation. This project we will be creating the ancestor to the LLM: the Markov text generator! The Markov chain was first introduced by Russian mathematician Andrey Markov in 1906 to model stochastic sequences as a set of events and transition probabilities. For each state, we compute the probability of all next states in the sequence given the current state, and transition according to that probability. For instance, say we have states E and A, where E transitions to itself with probability 0.3 and to A with probability 0.7, and A transitions to itself with probability 0.6 and to E with probability 0.4. We can depict this in the diagram below (from Wikipedia).
+
+Markov chains can model a plethora of real world processes. We will use Markov chains for text generation. Each “state” is actually the current word in the text. The transitions tell us what words might come next, and the probabilities tell us how often one word follows another. Therefore, given a starting word, we can randomly “predict” what word may come next. We can then generate that predicted word, repeat to find the next word, and so on. In the end, we have a fully new randomly generated text!
+
+In our hash table, then, each key is really a state. And the linked list of words that follow our key represents possible transitions. All the infrastructure is there to make this work - now we just have to write the text reading and generating processes!
+Read Text (40 pts)
+
+text_gen.h and text_gen.c
+
+In order to analyze text, we’ll have to learn how to read input! We haven’t taught you how to read files yet, and we won’t - it’s up to you to figure it out! Google (minus Gemini) is your friend. ChatGPT is not.
+
+“read_text” takes in a string which specifies a file to read from. It then reads that file and stores the results in a hash table. There’s a lot to do under the hood here, and we’ve left it open to you to decide how it needs to work.
+
+Two quick specifications: 1) Make sure to ignore capitalization, so “Cat” and “cat” are treated the same. 2) Punctuation should be treated as its own word. For instance, consider the sentence “You’re smart, but I’m smarter.” You should get the following words {“you”, “‘“, “re”, “smart”, “,”, “but”, “I”, “m”, “smarter”, “.”}, where the apostrophe has a frequency of 2.
+
+Your function should return a pointer to a hash table that stores every word in the text with the associated data.
+Generate Word (40 pts)
+
+text_gen.h and text_gen.c
+
+Now we can finally work on text generation. Write a function “generate_word” which takes in an input word (string) and a pointer to a hash table and returns a word to follow the input. The probability a word is outputted from this function should be the probability it comes after that input in the provided text.
+
+There are a number of ways to do this, but here’s one way you might try: First, generate a number between 0 and 1 (you’ll need to find a C library that can do this). Let’s call this number rand_p, and let’s create another variable sum = 0. For each word in our linked list, let the probability associated with the bigram (input, word) be word_p. Add sum += word_p, and then check if it exceeds rand_p. If it does, output this word. Otherwise, move on to the next word in the sequence. Here is some pseudocode:
+
+sum = 0
+
+rand_p ~ Uniform(0, 1)
+
+For word in linked list:
+ sum += p_word
+
+if sum > rand_p:
+
+return word 
+
+
+
+Convince yourself that this outputs each word according to its probability, and also that it won’t go past the end of the linked list. Feel free to use any other method you think works!
+Generate Text (20 pts)
+
+text_gen.h and text_gen.c
+
+Using our previous word generator, now let’s generate some text! Write a function “generate_text” which takes in an integer specifying the number of words to generate as well as a pointer to a hash table.
+
+Start with some random word in the hash table that starts a sentence (you may need to revise some stuff to track this). You should pick the words according to how frequently they appear in the text (e.g., if there are 100 non-unique words/punctuation in the text and “cat” is 25 of them, then you should pick “cat” as the starting word with ¼ probability). Then call your word generator function to make some text!
+
+Your text generator should stop when it has created the specified number of sentences (where a sentence ends with a period). Depending on run-on lengths, this could be quite long!
+
+Note: When you go to generate text, make sure the text contains at least one period. Otherwise your text generator will run forever!
+
+Your function should output a single string representing the generated text.
+Part 3: Let’s Generate!
+Generate Stuff (10 pts)
+
+writeup.txt/pdf
+
+Start by running your text generator on the provided text datasets below.
+
+Writeup question 1: Write a few sentences on some observations about how your generated text compares to the given text.
+Bigrams to Trigrams (40 pts)
+
+writeup.txt/pdf, text_gen.c, and hash_table.c
+
+So far, our code is limited to bigrams - that is, we only predict the single word that follows another single word. We can make our process more clever by recalling more of our generated text history by using trigrams, which use the past two words to generate a third word. That is, if our past two words were “A B”, then we select the third word C according to the probability that “A B C” appears in the text (given that “A B” already appeared).
+
+Update your code so that it can track trigrams instead of bigrams, according to an input parameter (see the function changes below) . You can do this by simply letting the strings for the keys in the hash table be strings containing two words instead of single words. If this is the case, we shouldn’t need to touch the hash table implementation, just the text generator.
+
+Here is what you may need to update:
+
+
+    “read_text”: add an integer parameter that tells us what “n-gram” to use (2 means bigram, 3 means trigram, anything else yields undefined behavior). If the function is given 3, it should process text such that the hash table now tracks trigrams. Be careful - since punctuation is treated as words, there may not be spaces everywhere you expect.
+
+
+    “generate_text”: add the same integer parameter from before. If it is given 3, it should now produce a random bigram to start the text with and be able to query the hash table using bigram keys.
+
+
+
+Then try generating text on the same inputs using trigrams.
+
+Writeup question 2: Write a few sentences about how the trigram generated text seems different.
+N-grams Theory (10 pts)
+
+writeup.txt/pdf
+
+We can generalize the approach to n-grams, where the last n-1 words are used to generate the nth word. You don’t need to implement this, but please answer the following questions.
+
+Writeup question 3: Theoretically, what should happen to your generated text as n increases?
+
+Writeup question 4: What happens if we set n to be the number of words in the input text itself?
+Make Something Cool (10 pts - ON MOODLE)
+
+Find your own text files online to use to generate cool stuff from. You can even try inputting texts from various sources into a single generator and see what happens. Have fun with it!
+
+Submit at least one of your generated texts on our Moodle forum. Make sure you include the names of all group members so we can give everyone credit. Feel free to include as many of your generated texts as you like!
+Look at Cool Things (5 pts - ON MOODLE, INDIVIDUAL, DUE BY THE END OF FALL BREAK)
+
+Each individual should look at others students’ submissions and make at least 3 comments on ones they like. These comments can be extremely brief, but they should have something more to say than “this is cool!”. Acceptable comments include but are not limited to: “I like X author too” or “It’s interesting that your generator did Y.”
+Some Example Text Databases
+
+Shakespeare:
+https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
+
+The Tell-Tale Heart:
+https://poestories.com/read/telltaleheart
