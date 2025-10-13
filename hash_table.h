@@ -4,14 +4,14 @@
 //Word Data Struct (10 pts)
 //type that contains main data about a word.
 typedef struct Word Word;
-//chart str[] for the actual word itself
+//char* str for the actual word itself
 //int textFreq for the number of times is occurs over-all in the reference text
 //BigramList bigramList is a linked list of all of the words that could occur after the word
 //Word* nextInBucket used to iterate through a bucket.
 
 //type that contains contextual information about a word when it is following another word
 typedef struct Bigram Bigram;
-//char str[] stores the string of the word
+//char* str stores the string of the word
 //int bigramFreq is the number of times it occurs after the preceding word
 //Bigram* nextNode iterates through the linked list of possible next words
 

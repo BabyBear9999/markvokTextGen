@@ -9,7 +9,7 @@
   typedef struct Bigram{
     int bigramFreq;
     struct Bigram* nextNode;
-    char str[];
+    char* str;
   }Bigram;
 
   //I (asa) removed the Word Word_Data class because I just think it's kind of unintuitive and unnecessary
@@ -24,7 +24,7 @@
     int textFreq;
     BigramList bigramList;
     struct Word* nextInBucket;
-    char str[]; //compiler wants strings to be at the end of struct since they have flexible size
+    char* str; //compiler wants strings to be at the end of struct since they have flexible size
   }Word;
 
 //Hash bucket table(10 points)
@@ -137,7 +137,7 @@
     //if it could not find word1 in the bucket, create a new Word struct for it
     if (parentWord == NULL){
       Word* newWord = malloc(sizeof(Word));
-      strcpy(newWord->str, word1);
+      newWord->str = strdup(word1);
       newWord->textFreq = 0;
       newWord->nextInBucket = NULL;
       (newWord->bigramList).head = NULL;
@@ -174,7 +174,7 @@
     //if it couldn't find word2 in the bigram list, create new Bigram struct for it
     if (childWord == NULL){
       Bigram* newBigram = malloc(sizeof(Bigram));
-      strcpy(newBigram->str, word2);
+      newBigram->str = strdup(word2);
       newBigram->bigramFreq = 0;
       newBigram->nextNode = NULL;
 
@@ -253,5 +253,7 @@
 
 //Testing (0 pts)
 
-
+int main() {
+  return 0;
+}
 
