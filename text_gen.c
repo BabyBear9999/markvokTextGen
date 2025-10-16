@@ -1,35 +1,90 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include "hash_table.h"
 
 //Read Text (40 pts)
 
-    HashTable* read_text(file text) {
+    typedef struct textUnit {
+        struct textUnit* nextUnit;
+        char* str;
+    }textUnit;
 
-        //turn the file into a string
+    typedef struct textList {
+        textUnit* head;
+    }textList;
+
+    void append(char* string, char newChar) {
+        int length = strlen(string);
+        string[length] = newChar;
+        string[length + 1] = '\0';
+    }
+
+    HashTable* read_text(char textFileName[]) {
+
+        //get the file
+        FILE* textFile = fopen(textFileName, "r");
 
         //create linked list so that the text is separated by 'word' and more easy to read
-        //this makes sense to me (asa), but is not necessary. you can just do away with this when implementing if you want to, but it might cause a couple more headaches at the expense of saving this one... idk
+        textList linkedList;
+        linkedList.head = NULL;
 
-        //for (i < number_of_chars)
+        //start building the list
+        textUnit* currentPos = linkedList.head;
+        char currentChar = fgetc(textFile);
+        char currentWord[50]; //just give it a bunch of space so that it'll like never overflow
+        while (currentChar != EOF) {
+            //set the char to lowercase
+            currentChar = tolower(currentChar);
 
-            //while current_char == 'a'|'b'|'c'|'d'...
+            //start building a word
+            if (currentChar == 'a' || currentChar == 'b' || currentChar == 'c' || currentChar == 'd' || currentChar == 'e' || currentChar == 'f' || currentChar == 'g' || currentChar == 'h' || currentChar == 'i' || currentChar == 'j' || currentChar == 'k' || currentChar == 'l' || currentChar == 'm' || currentChar == 'n' || currentChar == 'o' || currentChar == 'p' || currentChar == 'q' || currentChar == 'r' || currentChar == 's' || currentChar == 't' || currentChar == 'u' || currentChar == 'v' || currentChar == 'w' || currentChar == 'x' || currentChar == 'y' || currentChar == 'z'){ //lmao
+                append(currentWord, currentChar);
+            }
 
-                //build a string of a word
+            else {
+                //if we're at the end of a word, dump the current word to the linked list and reset it
+                textUnit newWord;
+                newWord.str = strdup(currentWord);
+                currentPos->nextUnit = &newWord;
+                currentPos = &newWord;
+                strcpy(currentWord "\0"); // THIS DOESN'T WORK. FIND OUT HOW TO MAKE THIS WORK!!
+            }
+            if (currentChar != ' ') {
+                //special characters should also be added as a unit
+                textUnit newSpecChar;
+                newSpecChar.str = "\0";
+                append(newSpecChar.str, currentChar);
+                currentPos->nextUnit = &newSpecChar;
+                currentPos = &newSpecChar;
+            }
+            currentChar = fgetc(textFile);
+        }
 
-            //if current_char == ' '
+        //adds the last word before the EOF quits the loop
+        textUnit lastWord;
+        lastWord.str = strdup(currentWord);
+        currentPos->nextUnit = &lastWord;
+        lastWord.nextUnit = NULL;
+        free(currentWord);
 
-                //put the word on the end of the linked list
+        //create new hash table
+        HashTable* hashTable = hash_table(1000, 2.5); // numbers picked arbitrarily...
 
-            //else
+        //load the linked list into the hash table
+        textUnit* parentWord = linkedList.head;
+        textUnit* childWord = linkedList.head->nextUnit;
+        while (childWord != NULL) {
+            add(parentWord->str, childWord->str, hashTable);
+            free(parentWord->str);
+            parentWord = childWord;
+            childWord = childWord->nextUnit;
+        }
 
-                //put the word on the linked list, and the current special character also on the linked list
+        fclose(textFile);
 
-
-        //create new hash table with size = length of linked list maybe?
-
-        //zip through the linked list, add()ing current and prev bigrams
-
-        //return hash table
+        return hashTable;
 
     }
 
