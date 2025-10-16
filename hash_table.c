@@ -276,7 +276,7 @@ int main() {
 
       Bigram* currentBigram = (currentWord->bigramList).head;
       while (currentBigram != NULL) {
-        printf("after %s: %s with %d occurances\n ", currentWord->str, currentBigram->str, currentBigram->bigramFreq);
+        printf(" after %s: %s with %d occurances\n", currentWord->str, currentBigram->str, currentBigram->bigramFreq);
         currentBigram = currentBigram->nextNode;
       }
 
