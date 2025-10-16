@@ -39,7 +39,8 @@
   typedef struct HashTable{
     Bucket* array;
     int arrSize;
-    int wordCount; //if you are implementing anything that involves adding new Word struct entries to the hash table, PLEASE UPDATE THIS. it makes resizing much easier.
+    int absWordCount; //basically counts the number of add calls. useful for part 2
+    int uniqWordCount; //counts the number of entries in the hash table. useful for resizing
     float loadFactor;
   }HashTable;
 
@@ -78,7 +79,8 @@
 
     newHashTable->arrSize = arraySize;
     newHashTable->loadFactor = loadFactor;
-    newHashTable->wordCount = 0;
+    newHashTable->absWordCount = 0;
+    newHashTable->uniqWordCount = 0;
 
     Bucket emptyBucket;
     emptyBucket.head = NULL;
@@ -109,18 +111,21 @@
 
 //Add (20 pts)
 
-  void resize(HashTable* hashTable);
+  HashTable* resize(HashTable* hashTable);
 
   void add(char word1[], char word2[], HashTable* hashTable){
+
+    //resize if exceeding load factor
+    if (hashTable->uniqWordCount > (hashTable->arrSize * hashTable->loadFactor)){
+      hashTable = resize(hashTable);
+    }
+
+    //since we're adding, increment the total n of add calls
+    hashTable->absWordCount ++;
+
     //taking out all of the variables from our HashTable struct for convencience of coding
     int tableSize = hashTable->arrSize;
     Bucket* array = hashTable->array;
-    float loadFactor = hashTable->loadFactor;
-
-    //resize if exceeding load factor
-    if (hashTable->wordCount > (tableSize * loadFactor)){
-      resize(hashTable);
-    }
 
     //gets hash value for word1, searches for it in its bucket
     int index = hash(tableSize, word1);
@@ -153,7 +158,7 @@
       parentWord = newWord;
 
       //since we have added a new word entry to the hash table, increment the counter
-      hashTable->wordCount++;
+      hashTable->uniqWordCount++;
     }
 
     //increment the frequency of word1's Word struct
@@ -197,7 +202,9 @@
 
 //Resize (20 pts)
 
-  void resize(HashTable* oldHashTable){
+  HashTable* resize(HashTable* oldHashTable){ // VERY BROKEN!!! DOESN'T WORK!!! FIX ME PLZ.....
+    printf("\nresize call\n");
+
     //taking out all of the variables from our old HashTable struct for convencience of coding
     int oldTableSize = oldHashTable->arrSize;
     Bucket* oldArray = oldHashTable->array;
@@ -209,18 +216,22 @@
     Bucket* newArray = newHashTable->array;
 
     //since we won't be adding any new words, we can just set the new hash table to have the same word count as the old one
-    newHashTable->wordCount = oldHashTable->wordCount;
+    newHashTable->absWordCount = oldHashTable->absWordCount;
+    newHashTable->uniqWordCount = oldHashTable->uniqWordCount;
 
     //iterates through the old hash table
     Word* prevWord;
     Word* currWord;
+    int newIndex;
     for (int i = 0; i < oldTableSize; i++){
       //iterates through the bucket at the current index
       currWord = oldArray[i].head;
       prevWord = NULL;
       while (currWord != NULL) {
         //gets new index for the current Word struct in the new hash table
-        int newIndex = hash(newTableSize, currWord->str);
+        newIndex = hash(newTableSize, currWord->str);
+
+        printf("moving %s into bucket %d\n", currWord->str, newIndex);
 
         //zips to the end of the bucket at the new index
         Word* currZipper = newArray[newIndex].head;
@@ -232,7 +243,7 @@
 
         //puts the word at the right place in the new bucket
         if (prevZipper == NULL){
-          newArray[newIndex].head = currWord;
+          (newArray[newIndex]).head = currWord;
         }
         else{
           prevZipper->nextInBucket = currWord;
@@ -241,31 +252,39 @@
         //iterates to the next word in the old bucket
         prevWord = currWord;
         currWord = currWord->nextInBucket;
+        printf("prev: %s¸ curr %s\n", prevWord->str, currWord->str);
 
         //makes sure that after being added to the new bucket, the Word struct's next node is reset to NULL
         prevWord->nextInBucket = NULL;
       }
     }
 
-    //cleans up old mallocs
+    //cleans up old mallocs and returns the resized hash table
     free(oldArray);
     free(oldHashTable);
+    return newHashTable;
+
   }
 
 //Testing (0 pts)
 
 int main() {
 
-  HashTable* hashTable = hash_table(20, (float) 5);
+  HashTable* hashTable = hash_table(100, (float) 5);
 
   add("lorem", "ipsum", hashTable);
   add("ipsum", "dolor", hashTable);
-  add("dolor", "test1", hashTable);
-  add("dolor", "test2", hashTable);
-  add("dolor", "test2", hashTable);
+  add("dolor", "sit1", hashTable);
+  add("dolor", "sit2", hashTable);
+  add("dolor", "sit2", hashTable);
+  add("sit1", "amet", hashTable);
+  add("amet", "b", hashTable);
+  add("b", "c", hashTable);
+  add("c", "d", hashTable);
 
 
-  for (int i = 0; i < 100; i++) {
+  printf("\nresults\n");
+  for (int i = 0; i < hashTable->arrSize; i++) {
     Bucket currentBucket = (hashTable->array)[i];
     Word* currentWord = currentBucket.head;
     // if (currentWord == NULL) {
