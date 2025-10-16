@@ -55,7 +55,7 @@
 
     while (1) {
       hasDivisor = 0;
-      for (int i = 0; i <= (currValue / 2); i++){
+      for (int i = 2; i <= (currValue / 2); i++){
         if (currValue % i == 0){
           hasDivisor = 1;
           break;
@@ -78,6 +78,7 @@
 
     newHashTable->arrSize = arraySize;
     newHashTable->loadFactor = loadFactor;
+    newHashTable->wordCount = 0;
 
     Bucket emptyBucket;
     emptyBucket.head = NULL;
@@ -254,6 +255,35 @@
 //Testing (0 pts)
 
 int main() {
+
+  HashTable* hashTable = hash_table(20, (float) 5);
+
+  add("lorem", "ipsum", hashTable);
+  add("ipsum", "dolor", hashTable);
+  add("dolor", "test1", hashTable);
+  add("dolor", "test2", hashTable);
+  add("dolor", "test2", hashTable);
+
+
+  for (int i = 0; i < 100; i++) {
+    Bucket currentBucket = (hashTable->array)[i];
+    Word* currentWord = currentBucket.head;
+    // if (currentWord == NULL) {
+    //   printf("%d: we've got a null boys\n", i);
+    // }
+    while (currentWord != NULL) {
+      printf("current word: %s with %d occurances\n", currentWord->str, currentWord->textFreq);
+
+      Bigram* currentBigram = (currentWord->bigramList).head;
+      while (currentBigram != NULL) {
+        printf("after %s: %s with %d occurances\n ", currentWord->str, currentBigram->str, currentBigram->bigramFreq);
+        currentBigram = currentBigram->nextNode;
+      }
+
+      currentWord = currentWord->nextInBucket;
+    }
+  }
+
   return 0;
 }
 
