@@ -49,7 +49,7 @@
                 newWord.str = strdup(currentWord);
                 currentPos->nextUnit = &newWord;
                 currentPos = &newWord;
-                strcpy(currentWord "\0"); // THIS DOESN'T WORK. FIND OUT HOW TO MAKE THIS WORK!!
+                strcpy(currentWord, "\0"); // THIS DOESN'T WORK. FIND OUT HOW TO MAKE THIS WORK!!
             }
             if (currentChar != ' ') {
                 //special characters should also be added as a unit
