@@ -91,7 +91,7 @@
 
 //Generate Word (40 pts)
 
-    char generate_word(char word[], HashTable* hashTable) {
+    // char generate_word(char word[], HashTable* hashTable) {
 
         //generate random int between 0 and the total text frequency of the current word
 
@@ -103,7 +103,51 @@
 
         //when the for loop exits, return the string of the current bigram
 
+    // }
+
+//Generate Word (40 pts) 
+    
+    char* generate_word(char word[], HashTable* hashTable) {
+        if (hashTable == NULL || word == NULL) {
+            return "";
+        }
+    
+        int index = hash(hashTable->arrSize, word);
+        Bucket* array = hashTable->array;
+    
+        Word* currWord = array[index].head;
+        while (currWord != NULL) {
+            if (strncmp(currWord->str, word, strlen(word)) == 0) {
+                break;
+            }
+            currWord = currWord->nextInBucket;
+        }
+        if (currWord == NULL || (currWord->bigramList).head == NULL) {
+            return "";
+        }
+    
+        int totalFreq = 0;
+        Bigram* it = (currWord->bigramList).head;
+        while (it != NULL) {
+            totalFreq += it->bigramFreq;
+            it = it->nextNode;
+        }
+        if (totalFreq <= 0) {
+            return "";
+        }
+        int r = rand() % (totalFreq + 1);
+        int running = 0;
+        it = (currWord->bigramList).head;
+        while (it != NULL) {
+            running += it->bigramFreq;
+            if (running > r) {
+                return it->str;
+            }
+            it = it->nextNode;
+        }
+        return (currWord->bigramList).head->str;
     }
+
 
 //Generate Text (20 pts)
 
