@@ -151,7 +151,7 @@
 
 //Generate Text (20 pts)
 
-    char generate_text(int length, HashTable* hashTable) {
+    // char generate_text(int length, HashTable* hashTable) {
 
         //generate random int between 0 and word count of hash table
 
@@ -172,6 +172,103 @@
 
         //return the string
 
+   // }
+    int hash(int size, char string[]);
+    char* generate_word(char word[], HashTable* hashTable); 
+    
+    static int no_space_before(const char* tok) {
+        return tok && (strcmp(tok, ".")==0 || strcmp(tok, ",")==0 || strcmp(tok, ";")==0 || strcmp(tok, ":")==0 || strcmp(tok, "!")==0 || strcmp(tok, "?")==0 || strcmp(tok, ")")==0 || strcmp(tok, "]")==0 || strcmp(tok, "}")==0);
+    }
+    static int no_space_after(const char* tok) {
+        return tok && (strcmp(tok, "(")==0 || strcmp(tok, "[")==0 || strcmp(tok, "{")==0 || strcmp(tok, "\"")==0 || strcmp(tok, "'")==0);
+    }
+    
+    static void append_token(char** buf, int* cap, int* len, const char* prev, const char* tok) {
+        if (tok == NULL) return;
+        int need_space = 0;
+    
+        if (*len == 0) {
+            need_space = 0;
+        } else if (no_space_before(tok)) {
+            need_space = 0;            
+        } else if (prev && no_space_after(prev)) {
+            need_space = 0;                    
+        } else {
+            need_space = 1;
+        }
+    
+        int add_len = (need_space ? 1 : 0) + (int)strlen(tok);
+        if (*len + add_len + 1 >= *cap) {
+            int new_cap = (*cap < 64 ? 128 : (*cap * 2));
+            while (*len + add_len + 1 >= new_cap) new_cap *= 2;
+            char* nb = (char*)realloc(*buf, new_cap);
+            if (!nb) return; 
+            *buf = nb; *cap = new_cap;
+        }
+        if (need_space) (*buf)[(*len)++] = ' ';
+        memcpy((*buf) + *len, tok, strlen(tok));
+        *len += (int)strlen(tok);
+        (*buf)[*len] = '\0';
+    }
+
+    static char* pick_start_word(HashTable* hashTable) {
+        if (!hashTable) return NULL;
+    
+        int total = 0;
+        for (int i = 0; i < hashTable->arrSize; i++) {
+            Word* w = hashTable->array[i].head;
+            while (w) {
+                total += w->textFreq;
+                w = w->nextInBucket;
+            }
+        }
+        if (total <= 0) return NULL;
+    
+        int r = rand() % total;
+        int run = 0;
+        for (int i = 0; i < hashTable->arrSize; i++) {
+            Word* w = hashTable->array[i].head;
+            while (w) {
+                run += w->textFreq;
+                if (run > r) return w->str;
+                w = w->nextInBucket;
+            }
+        }
+        for (int i = 0; i < hashTable->arrSize; i++) {
+            if (hashTable->array[i].head) return hashTable->array[i].head->str;
+        }
+        return NULL;
+    }
+    
+    char* generate_text(int sentences, HashTable* hashTable) {
+        if (hashTable == NULL || sentences <= 0) {
+            return NULL;
+        }
+    
+        char* curr = pick_start_word(hashTable);
+        if (curr == NULL) {
+            return NULL;
+        }
+        int cap = 256, len = 0;
+        char* out = (char*)malloc(cap);
+        if (!out) return NULL;
+        out[0] = '\0';
+        append_token(&out, &cap, &len, NULL, curr);
+        int period_count = (strcmp(curr, ".") == 0) ? 1 : 0;
+    
+        while (period_count < sentences && max_steps-- > 0) {
+            char* next = generate_word(curr, hashTable);
+            if (next == NULL) break;
+    
+            append_token(&out, &cap, &len, curr, next);
+    
+            if (strcmp(next, ".") == 0) {
+                period_count++;
+            }
+            curr = next;
+        }
+    
+        return out;
     }
 
 //Bigrams to Trigrams (40 pts)
